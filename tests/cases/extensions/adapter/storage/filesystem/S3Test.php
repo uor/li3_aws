@@ -17,9 +17,11 @@ class S3Test extends \lithium\test\Unit {
         unset($this->s3);
     }
 
-    public function testSimpleWriteAndDelete() {
+    public function testSimpleWriteExistsAndDelete() {
         $filename = 'test_file';
         $data = 'test data';
+
+        $this->_checkFileExists($filename, false);
 
         $closure = $this->s3->write($filename, $data);
         $this->assertTrue(is_callable($closure));
@@ -32,11 +34,24 @@ class S3Test extends \lithium\test\Unit {
         $result = file_get_contents($url);
         $this->assertEqual($data, $result);
 
+        $this->_checkFileExists($filename, true);
+
         // test simple delete
         $closureDelete = $this->s3->delete($filename);
         $closureDelete($this->s3, ['filename' => $filename]);
         // should now 403 as the file should be gone
         $headers = @get_headers($url);
-        $this->assertEqual('HTTP/1.1 403 Forbidden', $headers[0])
+        $this->assertEqual('HTTP/1.1 403 Forbidden', $headers[0]);
+
+        $this->_checkFileExists($filename, false);
+    }
+
+    protected function _checkFileExists($filename, $expected) {
+        $closure = $this->s3->exists($filename);
+        $result = $closure($this->s3, compact('filename'));
+        if ($expected) {
+            $this->assertTrue($result);
+        }
+        $this->assertFalse($result);
     }
 }

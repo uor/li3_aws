@@ -65,6 +65,21 @@ class S3 extends \lithium\core\Object {
 
     }
 
+    public function exists($filename) {
+        $s3 = new \AmazonS3($this->_config);
+        $bucket = $this->_config['bucket'];
+
+        return function($self, $params) use ($s3, $bucket) {
+            $filename = $params['filename'];
+
+            if(!$s3->if_bucket_exists($bucket)) {
+                return false; // @TODO exception?
+            }
+
+            return $s3->if_object_exists($bucket, $filename);
+        };
+    }
+
     public function delete($filename, array $options = array()) {
         $s3 = new \AmazonS3($this->_config);;
         $bucket = $this->_config['bucket'];
